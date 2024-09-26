@@ -6,16 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
-import androidx.window.area.WindowAreaCapability
 import androidx.window.core.ExperimentalWindowApi
 import com.example.studyfoldable.ui.theme.StudyFoldableTheme
 
@@ -26,41 +17,49 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Change this value to show the right pane WITH or WITHOUT the top bar
+        val showRightPaneWithTopBar = true
+
+        // Change this value to use or not the rear display
+        val useReadDisplay = true
+
         setContent {
-            var foldableState by remember { mutableStateOf<FoldableState>(FoldableState.None) }
-            var capabilityStatus by remember { mutableStateOf(WindowAreaCapability.Status.WINDOW_AREA_STATUS_UNSUPPORTED) }
-            var displaySecondPane by remember { mutableStateOf(false) }
-
-            GetFoldableState(this, lifecycleScope, lifecycle) { state ->
-                foldableState = state
+            if (useReadDisplay) {
+                SupportFoldableRearDisplay(
+                    activity = this,
+                    lifecycleScope = lifecycleScope,
+                    lifecycle = lifecycle,
+                ) {
+                    Page(title = "Rear", text = "Rear page content", showTopBar = true)
+                }
             }
-
-            SupportFoldableLowerDisplay(
-                this, lifecycleScope, lifecycle
-            ) {
-                displaySecondPane = it
-            }
-
-
-//            SupportFoldableRearDisplay(
-//                activity = this,
-//                lifecycleScope = lifecycleScope,
-//                lifecycle = lifecycle,
-//                capabilityStatusCallback = {
-//                    capabilityStatus = it
-//                },
-//                secondScreen = { ScreenSecond() },
-//            )
 
             StudyFoldableTheme {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                ) { innerPadding ->
-                    ScreenMain(
-                        modifier = Modifier.padding(innerPadding),
-                        foldableState = foldableState,
-                        capabilityStatus = capabilityStatus,
-                        displaySecondPane = displaySecondPane,
+                if (showRightPaneWithTopBar) {
+                    FoldableContainer(
+                        context = this,
+                        lifecycleScope = lifecycleScope,
+                        lifecycle = lifecycle,
+                        topBar = { PageTopBar(title = "Main") },
+                        contentMain = { PageContent(modifier = it, text = "Main content") },
+                        contentRight = { PageContent(modifier = it, text = "Right pane") },
+                        contentLower = { PageContent(modifier = it, text = "Lower pane") },
+                    )
+                } else {
+                    FoldableContainer(
+                        context = this,
+                        lifecycleScope = lifecycleScope,
+                        lifecycle = lifecycle,
+                        contentMain = {
+                            Page(
+                                modifier = it,
+                                title = "Main",
+                                text = "Main content",
+                                showTopBar = true
+                            )
+                        },
+                        contentRight = { PageContent(modifier = it, text = "Right pane") },
+                        contentLower = { PageContent(modifier = it, text = "Lower pane") },
                     )
                 }
             }
